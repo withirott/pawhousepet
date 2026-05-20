@@ -1,0 +1,3 @@
+ALTER TABLE users
+  ADD COLUMN national_id_hash VARCHAR(255) NULL,
+  ADD COLUMN is_seller_verified BOOLEAN NOT NULL DEFAULT FALSE;

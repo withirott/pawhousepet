@@ -74,7 +74,7 @@ exports.getProductById = async (req, res) => {
         const productId = req.params.id;
         
         const [products] = await pool.query(`
-            SELECT p.*, u.username as seller_name, u.phone as seller_phone, u.profile_image as seller_image
+            SELECT p.*, u.username as seller_name, u.phone as seller_phone, u.profile_image as seller_image, u.bio as seller_payment_info, u.payment_qr as seller_payment_qr
             FROM products p
             JOIN users u ON p.seller_id = u.id
             WHERE p.id = ?
@@ -105,7 +105,7 @@ exports.createProduct = async (req, res) => {
         await connection.beginTransaction();
 
         const sellerId = req.user.id;
-        const { name, age_months, species, breed, vaccine_status, description, price, gender, location } = req.body;
+        const { name, age_months, species, breed, vaccine_status, description, price, gender, location, lat, lng } = req.body;
 
         let vaccineCertPath = null;
         if (req.files['vaccineCert'] && req.files['vaccineCert'].length > 0) {
@@ -114,9 +114,9 @@ exports.createProduct = async (req, res) => {
 
         const [result] = await connection.query(`
             INSERT INTO products 
-            (seller_id, name, age_months, species, breed, vaccine_status, vaccine_cert, description, price, gender, location) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [sellerId, name, age_months || null, species || null, breed || null, vaccine_status === 'true' || vaccine_status === true, vaccineCertPath, description || null, price || 0, gender || 'Unknown', location || null]);
+            (seller_id, name, age_months, species, breed, vaccine_status, vaccine_cert, description, price, gender, location, lat, lng) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [sellerId, name, age_months || null, species || null, breed || null, vaccine_status === 'true' || vaccine_status === true, vaccineCertPath, description || null, price || 0, gender || 'Unknown', location || null, lat || null, lng || null]);
 
         const productId = result.insertId;
 
@@ -149,7 +149,7 @@ exports.updateProduct = async (req, res) => {
         const productId = req.params.id;
         const userId = req.user.id;
         const userRole = req.user.role;
-        const { status, price, description, name, age_months, species, breed, vaccine_status, gender, location } = req.body;
+        const { status, price, description, name, age_months, species, breed, vaccine_status, gender, location, lat, lng } = req.body;
 
         // Verify ownership or admin
         const [products] = await pool.query('SELECT seller_id, vaccine_cert FROM products WHERE id = ?', [productId]);
@@ -181,9 +181,11 @@ exports.updateProduct = async (req, res) => {
              vaccine_status = ?,
              vaccine_cert = ?,
              gender = COALESCE(?, gender),
-             location = COALESCE(?, location)
+             location = COALESCE(?, location),
+             lat = COALESCE(?, lat),
+             lng = COALESCE(?, lng)
              WHERE id = ?`,
-            [status, price, description, name, age_months, species, breed, isVaccinated, vaccineCertPath, gender, location, productId]
+            [status, price, description, name, age_months, species, breed, isVaccinated, vaccineCertPath, gender, location, lat, lng, productId]
         );
 
         res.json({ message: 'Product updated successfully' });

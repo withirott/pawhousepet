@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/axios';
 import { Link } from 'react-router-dom';
-import { FiShoppingBag, FiClock, FiCheckCircle, FiXCircle, FiUpload } from 'react-icons/fi';
+import { FiShoppingBag, FiClock, FiCheckCircle, FiXCircle, FiUpload, FiStar, FiMessageSquare } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
 const MyOrders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [reviewModalOpen, setReviewModalOpen] = useState(false);
+    const [selectedOrderForReview, setSelectedOrderForReview] = useState(null);
+    const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
 
     const fetchOrders = async () => {
         try {
@@ -99,6 +102,29 @@ const MyOrders = () => {
         });
     };
 
+    const openReviewModal = (order) => {
+        setSelectedOrderForReview(order);
+        setReviewData({ rating: 5, comment: '' });
+        setReviewModalOpen(true);
+    };
+
+    const handleReviewSubmit = async () => {
+        if (!selectedOrderForReview) return;
+        try {
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            await api.post('/reviews', {
+                orderId: selectedOrderForReview.id,
+                rating: reviewData.rating,
+                comment: reviewData.comment
+            });
+            Swal.fire('สำเร็จ!', 'ขอบคุณสำหรับรีวิวของคุณครับ', 'success');
+            setReviewModalOpen(false);
+            fetchOrders(); // refresh so maybe we can hide the button if already reviewed? We don't have reviewed flag yet, but user will get DUP_ENTRY error if try again.
+        } catch (error) {
+            Swal.fire('ข้อผิดพลาด', error.response?.data?.message || 'ไม่สามารถส่งรีวิวได้', 'error');
+        }
+    };
+
     const getFullImageUrl = (path) => `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`;
     const formatPrice = (price) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(price);
     const formatDate = (dateString) => new Intl.DateTimeFormat('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateString));
@@ -122,7 +148,7 @@ const MyOrders = () => {
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in fade-in">
             <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center"><FiShoppingBag className="mr-2 text-primary" /> ประวัติการสั่งซื้อของฉัน</h2>
+                <h2 className="text-xl font-bold text-gray-800 flex items-center"><FiShoppingBag className="mr-2 text-primary" /> ประวัติการซื้อของฉัน</h2>
             </div>
 
             <div className="overflow-x-auto">
@@ -190,6 +216,13 @@ const MyOrders = () => {
                                                 </button>
                                             ) : (order.order_status === 'cancelled') ? (
                                                 <span className="text-red-400 text-xs font-bold bg-red-50 px-3 py-1.5 rounded-full border border-red-100">ถูกยกเลิกแล้ว</span>
+                                            ) : (order.order_status === 'completed') ? (
+                                                <button 
+                                                    onClick={() => openReviewModal(order)}
+                                                    className="inline-flex items-center justify-center px-4 py-2 bg-yellow-100 text-yellow-700 font-bold text-xs rounded-full cursor-pointer hover:bg-yellow-400 hover:text-white transition-all transform hover:scale-105 shadow-sm w-full font-sans tracking-wide"
+                                                >
+                                                    <FiStar className="mr-1.5" /> รีวิวผู้ขาย
+                                                </button>
                                             ) : (
                                                 <span className="text-gray-400 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">ผูกมัด / ดำเนินการไปแล้ว</span>
                                             )}
@@ -201,6 +234,56 @@ const MyOrders = () => {
                     </table>
                 )}
             </div>
+
+            {/* Review Modal */}
+            {reviewModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black bg-opacity-50 px-4">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-fade-in">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                                <FiStar className="text-yellow-400 mr-2" /> ให้คะแนนผู้ขาย
+                            </h3>
+                            <button onClick={() => setReviewModalOpen(false)} className="text-gray-400 hover:text-gray-600"><FiXCircle size={24} /></button>
+                        </div>
+                        
+                        <div className="mb-6">
+                            <label className="block text-sm font-bold text-gray-700 mb-3 text-center">ระดับความพึงพอใจ</label>
+                            <div className="flex justify-center space-x-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button 
+                                        key={star}
+                                        onClick={() => setReviewData({...reviewData, rating: star})}
+                                        className="focus:outline-none transition-transform hover:scale-110"
+                                    >
+                                        <FiStar size={40} className={star <= reviewData.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} />
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-center text-xs font-bold mt-2 text-primary">
+                                {reviewData.rating === 5 ? 'ดีเยี่ยมยอด!' : reviewData.rating === 4 ? 'ดีมาก' : reviewData.rating === 3 ? 'พอใช้ได้' : reviewData.rating === 2 ? 'ควรปรับปรุง' : 'แย่มาก'}
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-bold text-gray-700 mb-2">ความคิดเห็น (ไม่บังคับ)</label>
+                            <textarea 
+                                rows="3" 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-primary focus:border-primary bg-gray-50 text-sm"
+                                placeholder="พิมพ์ความประทับใจของคุณเกี่ยวกับการบริการของผู้ขาย..."
+                                value={reviewData.comment}
+                                onChange={(e) => setReviewData({...reviewData, comment: e.target.value})}
+                            ></textarea>
+                        </div>
+
+                        <button 
+                            onClick={handleReviewSubmit}
+                            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-2xl shadow-md transition-colors"
+                        >
+                            ส่งรีวิว
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

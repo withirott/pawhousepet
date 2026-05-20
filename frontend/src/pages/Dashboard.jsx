@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import useAuthStore from '../contexts/useAuthStore';
 import MyProducts from '../components/dashboard/MyProducts';
 import AddProduct from '../components/dashboard/AddProduct';
+import VerifyIdentity from '../components/dashboard/VerifyIdentity';
 import MyOrders from '../components/dashboard/MyOrders';
 import Chats from '../components/dashboard/Chats';
 import Overview from '../components/dashboard/Overview';
 import ProfileEdit from '../components/dashboard/ProfileEdit';
 import Favorites from '../components/dashboard/Favorites';
 import MySales from '../components/dashboard/MySales';
-import { FiHome, FiBox, FiUser, FiShoppingBag, FiMessageSquare, FiHeart, FiDollarSign } from 'react-icons/fi';
+import AdminPanel from '../components/dashboard/AdminPanel';
+import { FiHome, FiBox, FiUser, FiShoppingBag, FiMessageSquare, FiHeart, FiDollarSign, FiShield } from 'react-icons/fi';
 
 const Dashboard = () => {
     const { user } = useAuthStore();
@@ -21,6 +23,9 @@ const Dashboard = () => {
             case 'my_products':
                 return <MyProducts setView={setActiveView} />;
             case 'add_product':
+                if (user?.verification_status !== 'verified') {
+                    return <VerifyIdentity onSuccess={() => setActiveView('add_product')} />;
+                }
                 return <AddProduct onSuccess={() => setActiveView('my_products')} />;
             case 'profile':
                 return <ProfileEdit />;
@@ -32,20 +37,26 @@ const Dashboard = () => {
                 return <MyOrders />;
             case 'chats':
                 return <Chats />;
+            case 'admin':
+                return user?.role === 'admin' ? <AdminPanel /> : <Overview setView={setActiveView} />;
             default:
                 return <Overview setView={setActiveView} />;
         }
     };
 
     const navItems = [
-        { id: 'overview', label: 'หน้าแรก', icon: <FiHome /> },
-        { id: 'favorites', label: 'รายการโปรด', icon: <FiHeart /> },
-        { id: 'my_products', label: 'สินค้ารอขาย', icon: <FiBox /> },
-        { id: 'sales', label: 'รายการขายของฉัน', icon: <FiDollarSign /> },
-        { id: 'orders', label: 'คำสั่งซื้อของฉัน', icon: <FiShoppingBag /> },
+        { id: 'overview', label: 'ภาพรวมบัญชี', icon: <FiHome /> },
         { id: 'chats', label: 'กล่องข้อความ', icon: <FiMessageSquare /> },
-        { id: 'profile', label: 'จัดการโปรไฟล์', icon: <FiUser /> },
+        { id: 'favorites', label: 'สัตว์เลี้ยงที่ถูกใจ', icon: <FiHeart /> },
+        { id: 'orders', label: 'ประวัติการซื้อของฉัน', icon: <FiShoppingBag /> },
+        { id: 'my_products', label: 'จัดการประกาศขาย', icon: <FiBox /> },
+        { id: 'sales', label: 'ออเดอร์ที่ลูกค้าสั่ง', icon: <FiDollarSign /> },
+        { id: 'profile', label: 'ตั้งค่าโปรไฟล์', icon: <FiUser /> },
     ];
+
+    if (user?.role === 'admin') {
+        navItems.push({ id: 'admin', label: 'ผู้ดูแลระบบ', icon: <FiShield /> });
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8 min-h-[calc(100vh-140px)]">

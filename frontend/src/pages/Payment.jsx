@@ -81,22 +81,40 @@ const Payment = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* QR Code Section */}
                 <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center">
-                    <h2 className="text-xl font-bold mb-4 text-center">สแกน QR Code เพื่อชำระเงิน</h2>
-                    <div className="bg-gray-100 p-4 rounded-2xl mb-6 flex justify-center items-center w-64 h-64 border-4 border-primary/20">
-                        {/* Mock QR Code. In real world, generate via PromptPay library */}
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="PromptPay QR" className="w-full h-full object-cover rounded-xl" />
-                    </div>
-                    
-                    <div className="w-full bg-primary/5 rounded-xl p-6 text-center border border-primary/10">
-                        <p className="text-gray-500 font-medium mb-2">ยอดรวมที่ต้องชำระ</p>
-                        <p className="text-4xl font-black text-primary mb-4">{formatPrice(transaction.total_amount)}</p>
-                        <p className="text-sm text-gray-600 mb-1">โอนเข้าบัญชี: <span className="font-bold text-gray-800">Pet Marketplace (Escrow)</span></p>
-                        <p className="text-sm text-gray-600">พร้อมเพย์: <span className="font-bold tracking-widest text-gray-800">099-XXX-XXXX</span></p>
-                    </div>
-
-                    <div className="mt-6 flex items-start text-sm text-gray-500 bg-gray-50 p-4 rounded-xl w-full">
-                        <FiShield className="text-green-500 mt-1 mr-3 shrink-0" size={20} />
-                        <p>เงินของคุณจะถูกเก็บไว้เป็นตัวกลางอย่างปลอดภัย และจะถูกโอนให้ผู้ขายเมื่อคุณได้รับสัตว์เลี้ยงเรียบร้อยแล้วเท่านั้น</p>
+                    <h2 className="text-xl font-bold mb-4 text-center">ช่องทางการชำระเงิน</h2>
+                    <div className="w-full space-y-4">
+                        {Array.from(new Set(transaction.orders?.map(o => o.seller_id))).map(sellerId => {
+                            const sellerOrders = transaction.orders.filter(o => o.seller_id === sellerId);
+                            const sellerName = sellerOrders[0].seller_name;
+                            const paymentInfo = sellerOrders[0].seller_payment_info || 'ไม่ระบุข้อมูลการรับเงิน กรุณาแชทถามผู้ขาย';
+                            const sellerQr = sellerOrders[0].seller_payment_qr;
+                            const sellerTotal = sellerOrders.reduce((sum, o) => sum + parseFloat(o.total_price), 0);
+                            
+                            return (
+                                <div key={sellerId} className="bg-gray-50 border border-gray-200 p-5 rounded-2xl flex flex-col sm:flex-row gap-4">
+                                    <div className="flex-grow">
+                                        <p className="font-bold text-gray-800 text-lg mb-2">ผู้ขาย: {sellerName}</p>
+                                        <p className="text-primary font-black text-2xl mb-3">ยอดโอน: {formatPrice(sellerTotal)}</p>
+                                        <div className="bg-white p-3 rounded-xl border border-gray-100 text-sm whitespace-pre-wrap text-gray-700 mb-2">
+                                            {paymentInfo}
+                                        </div>
+                                        <p className="text-xs text-gray-500 flex items-center">
+                                            <FiShield className="text-green-500 mr-1" />
+                                            หากมีหลายผู้ขาย กรุณาโอนแยกและรวมสลิปในรูปเดียว
+                                        </p>
+                                    </div>
+                                    {sellerQr ? (
+                                        <div className="flex-shrink-0 flex items-center justify-center bg-white p-2 rounded-xl border border-gray-200 shadow-sm h-36 w-36 self-center">
+                                            <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${sellerQr}`} alt="Seller QR Code" className="w-full h-full object-contain rounded-lg" />
+                                        </div>
+                                    ) : (
+                                        <div className="flex-shrink-0 flex items-center justify-center bg-gray-100 text-gray-400 p-2 rounded-xl border border-gray-200 border-dashed h-36 w-36 self-center text-xs text-center font-medium px-4">
+                                            ไม่มี QR Code
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 

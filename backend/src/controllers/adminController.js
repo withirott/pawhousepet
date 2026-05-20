@@ -120,7 +120,7 @@ exports.verifyTransaction = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, username, phone, role, created_at, bio, profile_image FROM users ORDER BY created_at DESC');
+        const [users] = await pool.query('SELECT id, username, phone, role, created_at, bio, profile_image, verification_status, status FROM users ORDER BY created_at DESC');
         res.json(users);
     } catch (error) {
         console.error('Get all users error:', error);
@@ -164,6 +164,75 @@ exports.deleteUser = async (req, res) => {
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('Delete user error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+exports.getPendingKYC = async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, username, id_card_image, created_at FROM users WHERE verification_status = "pending" ORDER BY created_at ASC');
+        res.json(users);
+    } catch (error) {
+        console.error('Get pending KYC error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+exports.approveKYC = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('UPDATE users SET verification_status = "verified" WHERE id = ?', [id]);
+        
+        const io = req.app.get('io');
+        if (io) io.to(`user_${id}`).emit('new_notification');
+        await pool.query('INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)', [id, 'new_product', 'การยืนยันตัวตนของคุณได้รับการอนุมัติแล้ว! ตอนนี้คุณสามารถลงขายสินค้าได้ทันที']);
+        
+        res.json({ message: 'KYC approved successfully' });
+    } catch (error) {
+        console.error('Approve KYC error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+exports.rejectKYC = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('UPDATE users SET verification_status = "rejected", id_card_image = NULL WHERE id = ?', [id]);
+        
+        const io = req.app.get('io');
+        if (io) io.to(`user_${id}`).emit('new_notification');
+        await pool.query('INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)', [id, 'new_product', 'การยืนยันตัวตนถูกปฏิเสธ กรุณาอัปโหลดรูปถ่ายบัตรประชาชนใหม่อีกครั้ง']);
+        
+        res.json({ message: 'KYC rejected successfully' });
+    } catch (error) {
+        console.error('Reject KYC error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+exports.banUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (parseInt(id) === req.user.id) return res.status(400).json({ message: 'Cannot ban yourself' });
+        
+        await pool.query('UPDATE users SET status = "banned" WHERE id = ?', [id]);
+        // Also hide their products
+        await pool.query('UPDATE products SET status = "reserved" WHERE seller_id = ?', [id]); // Just hide them
+        
+        res.json({ message: 'User banned successfully' });
+    } catch (error) {
+        console.error('Ban user error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+exports.unbanUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('UPDATE users SET status = "active" WHERE id = ?', [id]);
+        res.json({ message: 'User unbanned successfully' });
+    } catch (error) {
+        console.error('Unban user error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

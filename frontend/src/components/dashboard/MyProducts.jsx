@@ -56,7 +56,7 @@ const MyProducts = ({ setView }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-full">
         <div className="p-6 md:p-8 flex justify-between items-center border-b border-gray-100 bg-gray-50/50 relative">
             <div>
-                <h2 className="text-2xl font-bold text-gray-800">ประกาศของฉัน</h2>
+                <h2 className="text-2xl font-bold text-gray-800">จัดการประกาศขาย</h2>
                 <p className="text-sm text-gray-500 mt-1">จัดการรายการสัตว์เลี้ยงที่คุณลงประกาศขาย</p>
             </div>
             <button 

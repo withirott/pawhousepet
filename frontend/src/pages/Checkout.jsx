@@ -94,10 +94,7 @@ const Checkout = () => {
     const getFullImageUrl = (path) => `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`;
     const primaryImage = product.images && product.images.length > 0 ? getFullImageUrl((product.images.find(i => i.is_primary) || product.images[0]).image_url) : 'https://via.placeholder.com/150';
 
-    // Mock Payload for PromptPay QR (Using PromptPay standard template)
-    // 00020101021129370016A00000067701011101130066XXXXXXXXX5802TH5303764540X{PRICE}6304XXXX
-    // We'll just generate a basic payload string for the visual UI demonstration. 
-    const qrPayload = `PromptPay: 0812345678 - Amount: ${product.price} THB`;
+    const sellerQrImage = product.seller_payment_qr ? getFullImageUrl(product.seller_payment_qr) : null;
 
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in fade-in">
@@ -138,14 +135,22 @@ const Checkout = () => {
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow flex flex-col items-center justify-center">
                     {parseFloat(product.price) > 0 ? (
                         <>
-                            <h2 className="text-xl font-bold mb-6 text-gray-800">สแกนเพื่อจ่ายเงิน (พร้อมเพย์)</h2>
+                            <h2 className="text-xl font-bold mb-4 text-gray-800">โอนเงินไปยังผู้ขาย</h2>
+                            
+                            {sellerQrImage ? (
+                                <div className="bg-white p-4 inline-block rounded-3xl border-4 border-primary/20 shadow-sm mb-4 bg-gradient-to-br from-white to-gray-50">
+                                    <img src={sellerQrImage} alt="Seller QR Code" className="w-48 h-48 object-contain rounded-lg" />
+                                </div>
+                            ) : (
+                                <div className="bg-yellow-50 text-yellow-700 p-3 rounded-xl mb-4 text-sm font-bold border border-yellow-100 flex items-center justify-center">
+                                    ไม่มีรูป QR Code สำหรับสแกน กรุณาโอนตามรายละเอียดด้านล่าง
+                                </div>
+                            )}
 
-                            <div className="bg-white p-4 inline-block rounded-3xl border-4 border-primary/20 shadow-sm mb-4 bg-gradient-to-br from-white to-gray-50">
-                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}`} alt="PromptPay QR Code" width="180" height="180" className="opacity-90 blend-multiply" />
+                            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">ช่องทางการชำระเงินผู้ขาย</p>
+                            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 w-full text-left">
+                                <p className="text-sm text-gray-800 whitespace-pre-wrap">{product.seller_payment_info || 'ไม่ระบุ กรุณาแชทถามผู้ขาย'}</p>
                             </div>
-
-                            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">เบอร์พร้อมเพย์ผู้ขาย</p>
-                            <p className="text-lg font-bold text-gray-800 tracking-wider mb-6">098-746-0393</p>
 
                             {/* Upload Box */}
                             <div className={`w-full border-2 border-dashed rounded-2xl p-6 transition-all mt-2 ${slipPreview ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary hover:bg-gray-50'}`}>

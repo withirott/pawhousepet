@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
-import { FiMessageSquare, FiShoppingCart, FiUser, FiInfo, FiCheckCircle, FiImage, FiEdit2, FiMapPin } from 'react-icons/fi';
+import { FiMessageSquare, FiShoppingCart, FiUser, FiInfo, FiCheckCircle, FiImage, FiEdit2, FiMapPin, FiMap, FiStar } from 'react-icons/fi';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconUrl: markerIcon,
+    iconRetinaUrl: markerIcon2x,
+    shadowUrl: markerShadow,
+});
 import useAuthStore from '../contexts/useAuthStore';
 import useCartStore from '../contexts/useCartStore';
 import Swal from 'sweetalert2';
@@ -13,6 +27,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mainImage, setMainImage] = useState('');
+  const [sellerRating, setSellerRating] = useState({ averageRating: 0, totalReviews: 0 });
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -22,6 +37,14 @@ const ProductDetail = () => {
         if (res.data.images && res.data.images.length > 0) {
           const primary = res.data.images.find(img => img.is_primary) || res.data.images[0];
           setMainImage(primary.image_url);
+        }
+
+        // Fetch seller rating
+        try {
+            const ratingRes = await api.get(`/reviews/seller/${res.data.seller_id}`);
+            setSellerRating(ratingRes.data.stats);
+        } catch (err) {
+            console.error("Could not fetch rating", err);
         }
       } catch (err) {
         console.error("Failed to load product details", err);
@@ -195,6 +218,32 @@ const ProductDetail = () => {
                         </p>
                     </div>
 
+                    {product.lat && product.lng && (
+                        <div className="mb-8">
+                            <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center">
+                                <FiMap className="mr-2 text-primary" /> ตำแหน่งที่ตั้ง (จุดนัดรับ)
+                            </h3>
+                            <div className="h-64 w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm z-0 relative mb-3">
+                                <MapContainer center={[product.lat, product.lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+                                    <TileLayer
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    <Marker position={[product.lat, product.lng]} />
+                                </MapContainer>
+                            </div>
+                            <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${product.lat},${product.lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center space-x-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors"
+                            >
+                                <FiMapPin className="text-red-500" />
+                                <span>เปิดใน Google Maps</span>
+                            </a>
+                        </div>
+                    )}
+
                     {/* Seller Profile Line */}
                     <div className="flex items-center space-x-4 mb-8 p-4 border border-gray-200 rounded-2xl hover:shadow-sm transition-shadow bg-white">
                         <div className="h-14 w-14 rounded-full bg-primary-light flex justify-center items-center text-white overflow-hidden text-xl font-bold shadow-inner">
@@ -207,6 +256,12 @@ const ProductDetail = () => {
                         <div>
                             <p className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-0.5">ลงขายโดย</p>
                             <p className="font-black text-gray-800 text-lg">{product.seller_name}</p>
+                            {sellerRating.totalReviews > 0 && (
+                                <div className="flex items-center text-sm text-yellow-500 font-bold mt-1">
+                                    <FiStar className="fill-yellow-500 mr-1" />
+                                    <span>{sellerRating.averageRating} ({sellerRating.totalReviews} รีวิว)</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

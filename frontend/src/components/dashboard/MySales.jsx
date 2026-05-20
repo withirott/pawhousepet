@@ -75,7 +75,7 @@ const MySales = () => {
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in fade-in">
             <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center"><FiDollarSign className="mr-2 text-primary" /> รายการขายของฉัน</h2>
+                <h2 className="text-xl font-bold text-gray-800 flex items-center"><FiDollarSign className="mr-2 text-primary" /> ออเดอร์ที่ลูกค้าสั่ง</h2>
             </div>
 
             <div className="overflow-x-auto">

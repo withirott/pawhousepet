@@ -12,7 +12,7 @@ const io = initializeSocket(server);
 app.set('io', io);
 
 // Middleware
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors({ origin: [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'], credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,6 +28,7 @@ const chatRoutes = require('./src/routes/chatRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const favoriteRoutes = require('./src/routes/favoriteRoutes');
+const reviewRoutes = require('./src/routes/reviewRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -37,6 +38,7 @@ app.use('/api/chats', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/cart', require('./src/routes/cartRoutes'));
 app.use('/api/transactions', require('./src/routes/transactionRoutes'));
 
@@ -57,7 +59,7 @@ const pool = require('./src/config/db');
 cron.schedule('0 * * * *', async () => {
     try {
         const [orders] = await pool.query(`
-            SELECT id, product_id, seller_id 
+            SELECT o.id, o.product_id, p.seller_id 
             FROM orders o 
             JOIN products p ON o.product_id = p.id
             WHERE o.status = "shipping" AND o.shipped_at < NOW() - INTERVAL 3 DAY
@@ -70,7 +72,7 @@ cron.schedule('0 * * * *', async () => {
             // Notify seller
             await pool.query(
                 'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
-                [order.seller_id, 'order', 'ระบบได้ยืนยันออเดอร์อัตโนมัติ (ครบ 3 วัน) แอดมินจะดำเนินการโอนเงินให้ต่อไป']
+                [order.seller_id, 'order', 'ระบบได้ยืนยันการรับสัตว์เลี้ยงอัตโนมัติ (ครบ 3 วัน) ออเดอร์เสร็จสมบูรณ์']
             );
             if (io) io.to(`user_${order.seller_id}`).emit('new_notification');
         }

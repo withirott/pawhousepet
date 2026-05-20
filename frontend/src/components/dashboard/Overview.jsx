@@ -102,7 +102,7 @@ const Overview = ({ setView }) => {
                     <div className="p-4 bg-white/20 rounded-2xl mr-4"><FiMessageSquare size={28} /></div>
                     <div className="text-left">
                         <span className="font-black text-xl block">เช็คข้อความแชท</span>
-                        <span className="text-white/80 text-sm">ดูและพูดคุยกับผู้เช่าซื้อ</span>
+                        <span className="text-white/80 text-sm">ดูและพูดคุยกับผู้ซื้อ/ผู้ขาย</span>
                     </div>
                 </button>
             </div>

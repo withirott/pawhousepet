@@ -60,10 +60,12 @@ const AdminDashboard = () => {
         }
     };
 
+    const getFullImageUrl = (path) => `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`;
+
     const viewSlip = (imageUrl) => {
         Swal.fire({
             title: 'หลักฐานการชำระเงิน',
-            imageUrl: `${import.meta.env.VITE_API_URL.replace('/api', '')}${imageUrl}`,
+            imageUrl: getFullImageUrl(imageUrl),
             imageAlt: 'สลิปโอนเงิน',
             customClass: { image: 'max-h-96 object-contain' },
             confirmButtonText: 'ปิด'
@@ -268,7 +270,7 @@ const AdminDashboard = () => {
                                                         <td className="p-4 flex items-center justify-center space-x-2">
                                                             {order.slip_image ? (
                                                                 <button 
-                                                                    onClick={() => window.open(getFullImageUrl(order.slip_image), '_blank')}
+                                                                    onClick={() => viewSlip(order.slip_image)}
                                                                     className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                                                     title="ดูสลิปโอนเงิน"
                                                                 >

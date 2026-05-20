@@ -6,10 +6,12 @@ import { FiCamera, FiSave, FiUser } from 'react-icons/fi';
 
 const ProfileEdit = () => {
     const { user, checkAuth } = useAuthStore();
-    const [formData, setFormData] = useState({ phone: '', bio: '', address: '' });
+    const [formData, setFormData] = useState({ email: '', phone: '', bio: '', address: '' });
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
     const [imageFile, setImageFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState('');
+    const [qrFile, setQrFile] = useState(null);
+    const [qrPreviewUrl, setQrPreviewUrl] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const fileInputRef = useRef(null);
@@ -22,12 +24,16 @@ const ProfileEdit = () => {
         try {
             const res = await api.get('/users/me');
             setFormData({
+                email: res.data.email || '',
                 phone: res.data.phone || '',
                 bio: res.data.bio || '',
                 address: res.data.address || ''
             });
             if (res.data.profile_image) {
                 setPreviewUrl(`${import.meta.env.VITE_API_URL.replace('/api', '')}${res.data.profile_image}`);
+            }
+            if (res.data.payment_qr) {
+                setQrPreviewUrl(`${import.meta.env.VITE_API_URL.replace('/api', '')}${res.data.payment_qr}`);
             }
         } catch (error) {
             console.error('Failed to load profile', error);
@@ -48,15 +54,30 @@ const ProfileEdit = () => {
         }
     };
 
+    const handleQrChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                return Swal.fire('ไฟล์ใหญ่เกินไป', 'กรุณาอัปโหลดรูปภาพขนาดไม่เกิน 5MB', 'warning');
+            }
+            setQrFile(file);
+            setQrPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         const data = new FormData();
+        data.append('email', formData.email);
         data.append('phone', formData.phone);
         data.append('bio', formData.bio);
         data.append('address', formData.address);
         if (imageFile) {
             data.append('profileImage', imageFile);
+        }
+        if (qrFile) {
+            data.append('paymentQr', qrFile);
         }
 
         try {
@@ -147,6 +168,17 @@ const ProfileEdit = () => {
 
                 <div className="space-y-6">
                     <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">อีเมล (Email)</label>
+                        <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-gray-50"
+                            placeholder="เช่น user@example.com"
+                        />
+                    </div>
+
+                    <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">เบอร์โทรศัพท์ติดต่อ</label>
                         <input
                             type="tel"
@@ -168,16 +200,44 @@ const ProfileEdit = () => {
                         ></textarea>
                     </div>
 
-                    
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">รายละเอียดการรับเงิน </label>
-                        <textarea
-                            value={formData.bio}
-                            onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                            rows="4"
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-gray-50 resize-none"
-                            placeholder="พร้อมเพย์ 0xx-xxx-xxxx เลขบัญชี xxxxxxxxxx"
-                        ></textarea>
+                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                        <label className="block text-sm font-bold text-gray-800 mb-2">ช่องทางการรับเงิน (สำหรับผู้ซื้อโอนตรง)</label>
+                        <p className="text-xs text-gray-500 mb-4">ระบุรายละเอียดการรับเงิน เช่น พร้อมเพย์ หรือธนาคาร พร้อมแนบรูป QR Code เพื่อให้ผู้ซื้อสแกนจ่ายได้ง่ายขึ้น</p>
+                        
+                        <div className="flex flex-col md:flex-row gap-6">
+                            <div className="flex-grow">
+                                <textarea
+                                    value={formData.bio}
+                                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                                    rows="4"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-white resize-none"
+                                    placeholder="เช่น พร้อมเพย์ 081-234-5678 นายสมชาย ใจดี"
+                                ></textarea>
+                            </div>
+                            <div className="w-full md:w-48 flex-shrink-0">
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-2 flex flex-col items-center justify-center bg-white hover:bg-gray-50 transition-colors relative h-32">
+                                    {qrPreviewUrl ? (
+                                        <div className="w-full h-full relative group">
+                                            <img src={qrPreviewUrl} alt="QR Code" className="w-full h-full object-contain rounded-lg" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                                                <span className="text-white text-xs font-bold">เปลี่ยนรูป</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-gray-400 flex flex-col items-center">
+                                            <FiCamera size={24} className="mb-2" />
+                                            <span className="text-xs">อัปโหลด QR Code</span>
+                                        </div>
+                                    )}
+                                    <input 
+                                        type="file" 
+                                        onChange={handleQrChange} 
+                                        accept="image/*" 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

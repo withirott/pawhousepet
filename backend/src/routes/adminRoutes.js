@@ -14,5 +14,12 @@ router.put('/transactions/:transactionId/verify', adminController.verifyTransact
 router.get('/users', adminController.getAllUsers);
 router.patch('/users/:id/role', adminController.updateUserRole);
 router.delete('/users/:id', adminController.deleteUser);
+router.patch('/users/:id/ban', adminController.banUser);
+router.patch('/users/:id/unban', adminController.unbanUser);
+
+// KYC Management
+router.get('/kyc/pending', adminController.getPendingKYC);
+router.patch('/kyc/:id/approve', adminController.approveKYC);
+router.patch('/kyc/:id/reject', adminController.rejectKYC);
 
 module.exports = router;

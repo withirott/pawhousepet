@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 const Register = () => {
     const [formData, setFormData] = useState({ 
         username: '', 
+        email: '',
         password: '', 
         confirmPassword: '',
         phone: '',
@@ -35,6 +36,7 @@ const Register = () => {
         try {
             await api.post('/auth/register', {
                 username: formData.username,
+                email: formData.email,
                 password: formData.password,
                 phone: formData.phone,
                 role: formData.role
@@ -86,6 +88,19 @@ const Register = () => {
                                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                 placeholder="Username"
                                 value={formData.username}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="email" className="sr-only">อีเมล</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                placeholder="Email Address"
+                                value={formData.email}
                                 onChange={handleChange}
                             />
                         </div>

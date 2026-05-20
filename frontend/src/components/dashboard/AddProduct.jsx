@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
 import api from '../../services/axios';
 import Swal from 'sweetalert2';
-import { FiUploadCloud, FiX } from 'react-icons/fi';
+import { FiUploadCloud, FiX, FiMapPin } from 'react-icons/fi';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
+// Fix leaflet icon issue in react
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconUrl: markerIcon,
+    iconRetinaUrl: markerIcon2x,
+    shadowUrl: markerShadow,
+});
 const AddProduct = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -13,7 +27,10 @@ const AddProduct = ({ onSuccess }) => {
     vaccine_status: false,
     description: '',
     gender: 'Unknown',
-    location: ''
+    gender: 'Unknown',
+    location: '',
+    lat: 13.7563, // Default Bangkok
+    lng: 100.5018
   });
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -26,6 +43,21 @@ const AddProduct = ({ onSuccess }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const LocationMarker = () => {
+    useMapEvents({
+      click(e) {
+        setFormData(prev => ({
+          ...prev,
+          lat: e.latlng.lat,
+          lng: e.latlng.lng
+        }));
+      },
+    });
+    return formData.lat && formData.lng ? (
+      <Marker position={[formData.lat, formData.lng]} />
+    ) : null;
   };
 
   const handleImageChange = (e) => {
@@ -73,6 +105,7 @@ const AddProduct = ({ onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (imageFiles.length === 0) {
         Swal.fire('จำเป็นต้องมีรูปภาพ', 'กรุณาอัปโหลดรูปภาพสัตว์เลี้ยงของคุณอย่างน้อย 1 รูป', 'warning');
         return;
@@ -161,6 +194,19 @@ const AddProduct = ({ onSuccess }) => {
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">จังหวัดที่สามารถนัดรับได้</label>
                     <input type="text" name="location" value={formData.location} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-primary focus:border-primary text-sm" placeholder="เช่น กรุงเทพมหานคร, เชียงใหม่" />
+                </div>
+                <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center"><FiMapPin className="mr-1 text-primary"/> ปักหมุดสถานที่นัดรับ (คลิกบนแผนที่เพื่อเลือกพิกัด)</label>
+                    <div className="h-64 w-full rounded-xl overflow-hidden border border-gray-300 shadow-inner z-0 relative">
+                        <MapContainer center={[formData.lat, formData.lng]} zoom={6} scrollWheelZoom={true} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            <LocationMarker />
+                        </MapContainer>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">พิกัดปัจจุบัน: {formData.lat.toFixed(4)}, {formData.lng.toFixed(4)}</p>
                 </div>
                 <div className="flex flex-col mt-6">
                     <div className="flex items-center">

@@ -71,7 +71,7 @@ const Login = () => {
                                 type="text"
                                 required
                                 className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors"
-                                placeholder="Username"
+                                placeholder="Username or Email"
                                 value={formData.username}
                                 onChange={handleChange}
                             />
@@ -89,6 +89,14 @@ const Login = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                             />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end">
+                        <div className="text-sm">
+                            <Link to="/forgot-password" className="font-medium text-primary hover:text-primary-dark">
+                                Forgot your password?
+                            </Link>
                         </div>
                     </div>
 

@@ -34,6 +34,12 @@ const useAuthStore = create((set) => ({
             localStorage.removeItem('token');
             set({ user: null, isAuthenticated: false, loading: false });
         }
+    },
+
+    // Alias for checkAuth to refresh profile data
+    fetchUserProfile: async () => {
+        const { checkAuth } = useAuthStore.getState();
+        await checkAuth();
     }
 }));
 

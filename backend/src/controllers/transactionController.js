@@ -14,9 +14,11 @@ exports.getTransaction = async (req, res) => {
 
         // Fetch associated orders
         const [orders] = await pool.query(`
-            SELECT o.id, o.total_price, p.name, p.species, pi.image_url as product_image
+            SELECT o.id, o.total_price, p.name, p.species, p.seller_id, pi.image_url as product_image,
+                   u.username as seller_name, u.phone as seller_phone, u.bio as seller_payment_info, u.payment_qr as seller_payment_qr
             FROM orders o
             JOIN products p ON o.product_id = p.id
+            JOIN users u ON p.seller_id = u.id
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
             WHERE o.transaction_id = ?
         `, [transactionId]);

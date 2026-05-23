@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../services/axios';
 import Swal from 'sweetalert2';
 import { FiUploadCloud, FiX, FiMapPin } from 'react-icons/fi';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -36,6 +36,8 @@ const AddProduct = ({ onSuccess }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [vaccineCertFile, setVaccineCertFile] = useState(null);
   const [vaccineCertPreview, setVaccineCertPreview] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -58,6 +60,57 @@ const AddProduct = ({ onSuccess }) => {
     return formData.lat && formData.lng ? (
       <Marker position={[formData.lat, formData.lng]} />
     ) : null;
+  };
+
+  const MapUpdater = ({ lat, lng }) => {
+    const map = useMap();
+    useEffect(() => {
+      map.flyTo([lat, lng], map.getZoom() < 13 ? 15 : map.getZoom());
+    }, [lat, lng, map]);
+    return null;
+  };
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData(prev => ({
+            ...prev,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          }));
+        },
+        (error) => {
+          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดึงตำแหน่งปัจจุบันได้ กรุณาเปิดการอนุญาต (Location) ในเบราว์เซอร์', 'error');
+        }
+      );
+    } else {
+      Swal.fire('ข้อผิดพลาด', 'เบราว์เซอร์ของคุณไม่รองรับการดึงตำแหน่ง', 'error');
+    }
+  };
+
+  const searchLocation = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearchingLocation(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const result = data[0];
+        setFormData(prev => ({
+          ...prev,
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon)
+        }));
+      } else {
+        Swal.fire('ไม่พบสถานที่', 'ลองพิมพ์ชื่อสถานที่ให้ชัดเจนขึ้น (เช่น เพิ่มชื่อจังหวัด)', 'info');
+      }
+    } catch (error) {
+      console.error('Search location error', error);
+      Swal.fire('ข้อผิดพลาด', 'ระบบค้นหาสถานที่มีปัญหาชั่วคราว', 'error');
+    } finally {
+      setIsSearchingLocation(false);
+    }
   };
 
   const handleImageChange = (e) => {
@@ -196,7 +249,32 @@ const AddProduct = ({ onSuccess }) => {
                     <input type="text" name="location" value={formData.location} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-primary focus:border-primary text-sm" placeholder="เช่น กรุงเทพมหานคร, เชียงใหม่" />
                 </div>
                 <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center"><FiMapPin className="mr-1 text-primary"/> ปักหมุดสถานที่นัดรับ (คลิกบนแผนที่เพื่อเลือกพิกัด)</label>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 space-y-2 sm:space-y-0">
+                        <label className="text-sm font-medium text-gray-700 flex items-center"><FiMapPin className="mr-1 text-primary"/> ปักหมุดสถานที่นัดรับ</label>
+                        <button type="button" onClick={handleGetLocation} className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors font-bold flex items-center whitespace-nowrap">
+                            <FiMapPin className="mr-1" /> ดึงพิกัดปัจจุบันของฉัน (GPS)
+                        </button>
+                    </div>
+                    
+                    <div className="flex mb-3">
+                        <input 
+                            type="text" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchLocation())}
+                            placeholder="พิมพ์ชื่อสถานที่, อำเภอ หรือ จังหวัดเพื่อค้นหา..." 
+                            className="flex-grow border border-gray-300 rounded-l-lg py-2 px-3 text-sm focus:ring-primary focus:border-primary"
+                        />
+                        <button 
+                            type="button"
+                            onClick={searchLocation}
+                            disabled={isSearchingLocation}
+                            className="bg-gray-800 text-white px-4 rounded-r-lg text-sm font-bold hover:bg-gray-700 disabled:opacity-50"
+                        >
+                            {isSearchingLocation ? 'ค้นหา...' : 'ค้นหาสถานที่'}
+                        </button>
+                    </div>
+
                     <div className="h-64 w-full rounded-xl overflow-hidden border border-gray-300 shadow-inner z-0 relative">
                         <MapContainer center={[formData.lat, formData.lng]} zoom={6} scrollWheelZoom={true} style={{ height: '100%', width: '100%', zIndex: 0 }}>
                             <TileLayer
@@ -204,6 +282,7 @@ const AddProduct = ({ onSuccess }) => {
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
                             <LocationMarker />
+                            <MapUpdater lat={formData.lat} lng={formData.lng} />
                         </MapContainer>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">พิกัดปัจจุบัน: {formData.lat.toFixed(4)}, {formData.lng.toFixed(4)}</p>

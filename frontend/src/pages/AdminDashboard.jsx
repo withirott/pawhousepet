@@ -11,8 +11,9 @@ const AdminDashboard = () => {
     const { user, loading: authLoading } = useAuthStore();
     const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0 });
     const [orders, setOrders] = useState([]);
+    const [kycRequests, setKycRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview'); // overview, users
+    const [activeTab, setActiveTab] = useState('overview'); // overview, kyc, users
 
     useEffect(() => {
         if (user && user.role === 'admin') {
@@ -23,12 +24,14 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const [statsRes, ordersRes] = await Promise.all([
+            const [statsRes, ordersRes, kycRes] = await Promise.all([
                 api.get('/admin/stats'),
-                api.get('/admin/orders')
+                api.get('/admin/orders'),
+                api.get('/admin/kyc/pending')
             ]);
             setStats(statsRes.data);
             setOrders(ordersRes.data);
+            setKycRequests(kycRes.data);
         } catch (error) {
             console.error('Failed to load admin data:', error);
             Swal.fire('Error', 'Failed to load Dashboard data', 'error');
@@ -57,6 +60,16 @@ const AdminDashboard = () => {
             } catch (error) {
                 Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดำเนินการได้', 'error');
             }
+        }
+    };
+
+    const handleKYC = async (id, action) => {
+        try {
+            const res = await api.patch(`/admin/kyc/${id}/${action}`);
+            Swal.fire('สำเร็จ', res.data.message, 'success');
+            fetchDashboardData();
+        } catch (error) {
+            Swal.fire('ล้มเหลว', error.response?.data?.message || 'ไม่สามารถดำเนินการได้', 'error');
         }
     };
 
@@ -125,6 +138,13 @@ const AdminDashboard = () => {
                         ตรวจสอบข้อมูล & ออเดอร์
                     </button>
                     <button 
+                        onClick={() => setActiveTab('kyc')}
+                        className={`px-6 py-2 rounded-full font-bold text-sm transition-all flex items-center ${activeTab === 'kyc' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        ตรวจสอบบัตรประชาชน
+                        {kycRequests.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{kycRequests.length}</span>}
+                    </button>
+                    <button 
                         onClick={() => setActiveTab('users')}
                         className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeTab === 'users' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
@@ -141,6 +161,77 @@ const AdminDashboard = () => {
                 <>
                     {activeTab === 'users' ? (
                         <UserManagement />
+                    ) : activeTab === 'kyc' ? (
+                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                                <h2 className="text-xl font-bold text-gray-800">คำขอยืนยันตัวตน (KYC)</h2>
+                                <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full font-bold text-sm">รอดำเนินการ {kycRequests.length} รายการ</span>
+                            </div>
+                            
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100 text-gray-500 text-sm tracking-wider">
+                                            <th className="p-4 font-medium">ชื่อผู้ใช้</th>
+                                            <th className="p-4 font-medium">วันที่ขอ</th>
+                                            <th className="p-4 font-medium text-center">หลักฐาน</th>
+                                            <th className="p-4 font-medium text-center">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {kycRequests.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="4" className="p-12 text-center text-gray-400">
+                                                    <FiCheck className="mx-auto mb-4 text-green-300 w-12 h-12" />
+                                                    <p className="text-lg">ไม่มีคำขอยืนยันตัวตนค้างอยู่</p>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            kycRequests.map(req => (
+                                                <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                                    <td className="p-4 flex items-center space-x-3">
+                                                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-gray-500">
+                                                            {req.username.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-gray-800">{req.username}</p>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-sm text-gray-600">{new Date(req.created_at).toLocaleString()}</td>
+                                                    <td className="p-4 text-center">
+                                                        <button 
+                                                            onClick={() => Swal.fire({imageUrl: getFullImageUrl(req.id_card_image), title: 'รูปบัตรประชาชน', width: 800, customClass: { image: 'max-h-96 object-contain' }})}
+                                                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center"
+                                                            title="ดูรูปบัตร"
+                                                        >
+                                                            <FiImage size={20} className="mr-2" /> ดูรูปบัตร
+                                                        </button>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center justify-center space-x-2">
+                                                            <button 
+                                                                onClick={() => handleKYC(req.id, 'approve')}
+                                                                className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                                                                title="อนุมัติ"
+                                                            >
+                                                                <FiCheck size={18} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleKYC(req.id, 'reject')}
+                                                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                                                title="ปฏิเสธ"
+                                                            >
+                                                                <FiX size={18} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     ) : (
                         <>
                             {/* Stats Grid */}

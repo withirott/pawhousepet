@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/axios';
-import { FiBox, FiShoppingBag, FiMessageSquare, FiStar } from 'react-icons/fi';
+import { FiBox, FiShoppingBag, FiMessageSquare, FiStar, FiCheckCircle } from 'react-icons/fi';
 import Swal from 'sweetalert2';
+import useAuthStore from '../../contexts/useAuthStore';
 
 const Overview = ({ setView }) => {
+    const { user } = useAuthStore();
     const [stats, setStats] = useState({ products: 0, orders: 0, spent: 0 });
     const [loading, setLoading] = useState(true);
 
@@ -49,8 +51,21 @@ const Overview = ({ setView }) => {
 
     return (
         <div className="animate-fade-in fade-in">
-            <h2 className="text-3xl font-black text-secondary tracking-tight mb-2">ยินดีต้อนรับกลับมา!</h2>
-            <p className="text-gray-500 mb-8 text-lg">สรุปภาพรวมบัญชีผู้ใช้และการลงทะเบียนสัตว์เลี้ยงของคุณ</p>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-8">
+                <div>
+                    <h2 className="text-3xl font-black text-secondary tracking-tight mb-2">ยินดีต้อนรับกลับมา!</h2>
+                    <p className="text-gray-500 text-lg">สรุปภาพรวมบัญชีผู้ใช้และการลงทะเบียนสัตว์เลี้ยงของคุณ</p>
+                </div>
+                {user?.verification_status === 'verified' && (
+                    <div className="mt-4 md:mt-0 flex items-center bg-green-50 text-green-700 px-4 py-2 rounded-xl border border-green-200 shadow-sm w-max">
+                        <FiCheckCircle className="mr-2 text-green-500" size={20} />
+                        <div>
+                            <p className="font-bold text-sm leading-tight">บัญชีผู้ใช้ยืนยันตัวตนแล้ว</p>
+                            <p className="text-[10px] opacity-80 leading-tight">เพิ่มความน่าเชื่อถือในการซื้อขาย</p>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 {/* Stat 1 */}

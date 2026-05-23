@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         let uploadPath = 'uploads/';
         
-        if (file.fieldname === 'profileImage') uploadPath += 'profiles/';
+        if (file.fieldname === 'profileImage' || file.fieldname === 'idCardImage') uploadPath += 'profiles/';
         else if (file.fieldname === 'slipImage' || file.fieldname === 'slip_image') uploadPath += 'slips/';
         else if (file.fieldname === 'productImage') uploadPath += 'products/';
         else if (file.fieldname === 'vaccineCert') uploadPath += 'vaccines/';

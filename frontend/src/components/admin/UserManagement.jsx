@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/axios';
 import Swal from 'sweetalert2';
-import { FiTrash2, FiShield, FiUser } from 'react-icons/fi';
+import { FiTrash2, FiShield, FiUser, FiCreditCard } from 'react-icons/fi';
 import useAuthStore from '../../contexts/useAuthStore';
 
 const UserManagement = () => {
@@ -127,13 +127,33 @@ const UserManagement = () => {
                                 <td className="p-4 text-sm text-gray-600">{u.phone || '-'}</td>
                                 <td className="p-4 text-sm text-gray-600">{formatDate(u.created_at)}</td>
                                 <td className="p-4">
-                                    {u.role === 'admin' ? (
-                                        <span className="flex items-center text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded w-max"><FiShield className="mr-1" /> ผู้ดูแลระบบ</span>
-                                    ) : (
-                                        <span className="flex items-center text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded w-max"><FiUser className="mr-1" /> สมาชิกทั่วไป</span>
-                                    )}
+                                    <div className="flex flex-col space-y-1">
+                                        {u.role === 'admin' ? (
+                                            <span className="flex items-center text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded w-max"><FiShield className="mr-1" /> ผู้ดูแลระบบ</span>
+                                        ) : (
+                                            <span className="flex items-center text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded w-max"><FiUser className="mr-1" /> สมาชิกทั่วไป</span>
+                                        )}
+                                        {u.verification_status === 'verified' && (
+                                            <span className="flex items-center text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded w-max border border-green-100">ยืนยันตัวตนแล้ว</span>
+                                        )}
+                                        {u.verification_status === 'pending' && (
+                                            <span className="flex items-center text-[10px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded w-max border border-yellow-100">รอตรวจ KYC</span>
+                                        )}
+                                        {u.verification_status === 'rejected' && (
+                                            <span className="flex items-center text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded w-max border border-red-100">KYC ไม่ผ่าน</span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="p-4 flex items-center justify-center space-x-2">
+                                    {u.id_card_image && (
+                                        <button 
+                                            onClick={() => Swal.fire({imageUrl: getFullImageUrl(u.id_card_image), title: 'รูปบัตรประชาชน', width: 800, customClass: { image: 'max-h-96 object-contain' }})}
+                                            className="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                                            title="ดูรูปบัตรประชาชน"
+                                        >
+                                            <FiCreditCard size={18} />
+                                        </button>
+                                    )}
                                     <button 
                                         onClick={() => handleRoleChange(u.id, u.role, u.username)}
                                         className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"

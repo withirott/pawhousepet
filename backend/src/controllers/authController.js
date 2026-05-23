@@ -72,7 +72,8 @@ exports.login = async (req, res) => {
                 username: user.username,
                 role: user.role,
                 profile_image: user.profile_image,
-                is_seller_verified: !!user.is_seller_verified
+                is_seller_verified: !!user.is_seller_verified,
+                verification_status: user.verification_status
             }
         });
     } catch (error) {
@@ -84,7 +85,7 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
     try {
         const userId = req.user.id;
-        const [users] = await pool.query('SELECT id, username, email, phone, bio, profile_image, role, is_seller_verified, created_at FROM users WHERE id = ?', [userId]);
+        const [users] = await pool.query('SELECT id, username, email, phone, bio, profile_image, role, is_seller_verified, verification_status, created_at FROM users WHERE id = ?', [userId]);
 
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });

@@ -72,7 +72,16 @@ const Dashboard = () => {
                                 user?.username.charAt(0).toUpperCase()
                             )}
                         </div>
-                        <h2 className="text-xl font-bold text-white mb-1">{user?.username}</h2>
+                        <div className="flex items-center space-x-1 mb-1">
+                            <h2 className="text-xl font-bold text-white">{user?.username}</h2>
+                            {user?.verification_status === 'verified' && (
+                                <div className="text-green-300" title="ยืนยันตัวตนแล้ว">
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
                         <span className="text-xs bg-white text-primary px-3 py-1 rounded-full font-bold tracking-wider">{user?.role === 'admin' ? 'ผู้ดูแลระบบ' : 'สมาชิกทั่วไป'}</span>
                     </div>
 

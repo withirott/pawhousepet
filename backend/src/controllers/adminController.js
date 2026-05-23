@@ -120,7 +120,7 @@ exports.verifyTransaction = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, username, phone, role, created_at, bio, profile_image, verification_status, status FROM users ORDER BY created_at DESC');
+        const [users] = await pool.query('SELECT id, username, phone, role, created_at, bio, profile_image, verification_status, status, id_card_image FROM users ORDER BY created_at DESC');
         res.json(users);
     } catch (error) {
         console.error('Get all users error:', error);

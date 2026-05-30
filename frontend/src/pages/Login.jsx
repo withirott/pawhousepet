@@ -19,28 +19,28 @@ const Login = () => {
         setLoading(true);
         try {
             const response = await api.post('/auth/login', formData);
-            // Destructure the expected response format from our backend
             const { token, user } = response.data;
-            
-            // Save state via Zustand action
+
             login(user, token);
-            
+
             Swal.fire({
                 icon: 'success',
-                title: 'Welcome Back!',
+                title: 'ยินดีต้อนรับกลับมา!',
+                text: 'เข้าสู่ระบบสำเร็จแล้ว',
                 toast: true,
                 position: 'top-end',
                 showConfirmButton: false,
-                timer: 3000
+                timer: 3000,
             });
-            
+
             navigate('/');
         } catch (error) {
             Swal.fire({
                 icon: 'error',
-                title: 'Login Failed',
-                text: error.response?.data?.message || 'Something went wrong',
-                confirmButtonColor: '#34d399'
+                title: 'เข้าสู่ระบบไม่สำเร็จ',
+                text: error.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#f97316',
             });
         } finally {
             setLoading(false);
@@ -48,65 +48,94 @@ const Login = () => {
     };
 
     return (
-        <div className="flex-grow flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl">
-                <div>
-                    <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-                        Sign in to PetPew
+        <div className="flex-grow flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-amber-50 py-16 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-2xl border border-orange-100/60">
+                {/* Header */}
+                <div className="text-center mb-8">
+                    <div className="text-5xl mb-3">🐾</div>
+                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                        เข้าสู่ระบบ PetPew
                     </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Or{' '}
-                        <Link to="/register" className="font-medium text-primary hover:text-primary-dark transition">
-                            create a new account
+                    <p className="mt-3 text-sm text-gray-500">
+                        หรือ{' '}
+                        <Link
+                            to="/register"
+                            className="font-semibold text-orange-500 hover:text-orange-600 transition-colors underline underline-offset-2"
+                        >
+                            สมัครสมาชิกใหม่
                         </Link>
                     </p>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="rounded-md shadow-sm -space-y-px">
-                        <div>
-                            <label htmlFor="username" className="sr-only">ชื่อผู้ใช้งาน</label>
-                            <input
-                                id="username"
-                                name="username"
-                                type="text"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors"
-                                placeholder="Username or Email"
-                                value={formData.username}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="password" className="sr-only">รหัสผ่าน</label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors"
-                                placeholder="Password"
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                        </div>
+
+                {/* Form */}
+                <form className="space-y-5" onSubmit={handleSubmit}>
+                    {/* Username / Email */}
+                    <div>
+                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
+                            ชื่อผู้ใช้งาน หรือ อีเมล
+                        </label>
+                        <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            required
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-all sm:text-sm"
+                            placeholder="ชื่อผู้ใช้งาน หรือ อีเมล"
+                            value={formData.username}
+                            onChange={handleChange}
+                        />
                     </div>
 
+                    {/* Password */}
+                    <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                            รหัสผ่าน
+                        </label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-all sm:text-sm"
+                            placeholder="รหัสผ่าน"
+                            value={formData.password}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    {/* Forgot Password */}
                     <div className="flex items-center justify-end">
-                        <div className="text-sm">
-                            <Link to="/forgot-password" className="font-medium text-primary hover:text-primary-dark">
-                                Forgot your password?
-                            </Link>
-                        </div>
+                        <Link
+                            to="/forgot-password"
+                            className="text-sm font-medium text-orange-500 hover:text-orange-600 transition-colors"
+                        >
+                            ลืมรหัสผ่าน?
+                        </Link>
                     </div>
 
+                    {/* Submit Button */}
                     <div>
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white ${loading ? 'bg-primary-light cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors`}
+                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-semibold rounded-xl text-white shadow-md transition-all duration-200 ${
+                                loading
+                                    ? 'bg-orange-300 cursor-not-allowed'
+                                    : 'bg-orange-500 hover:bg-orange-600 hover:shadow-lg active:scale-[0.98]'
+                            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400`}
                         >
-                            {loading ? 'Signing in...' : 'Sign in'}
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    กำลังเข้าสู่ระบบ...
+                                </>
+                            ) : (
+                                'เข้าสู่ระบบ'
+                            )}
                         </button>
                     </div>
                 </form>

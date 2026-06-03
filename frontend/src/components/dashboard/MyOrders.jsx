@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/axios';
 import { Link } from 'react-router-dom';
-import { FiShoppingBag, FiClock, FiCheckCircle, FiXCircle, FiUpload, FiStar, FiMessageSquare } from 'react-icons/fi';
+import { FiShoppingBag, FiClock, FiCheckCircle, FiXCircle, FiUpload, FiStar } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
 const MyOrders = () => {
@@ -10,6 +10,7 @@ const MyOrders = () => {
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
     const [selectedOrderForReview, setSelectedOrderForReview] = useState(null);
     const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
+    const [activeTab, setActiveTab] = useState('all');
 
     const fetchOrders = async () => {
         try {
@@ -26,33 +27,7 @@ const MyOrders = () => {
         fetchOrders();
     }, []);
 
-    const handleUploadSlip = async (e, orderId) => {
-        const file = e.target.files[0];
-        if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            return Swal.fire('ไฟล์ใหญ่เกินไป', 'กรุณาอัปโหลดรูปภาพขนาดไม่เกิน 5MB', 'warning');
-        }
-
-        const formData = new FormData();
-        formData.append('slipImage', file);
-
-        try {
-            Swal.fire({
-                title: 'กำลังอัปโหลด...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-            await api.post(`/orders/${orderId}/upload-slip`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            Swal.fire('สำเร็จ', 'อัปโหลดสลิปเรียบร้อยแล้ว รอการตรวจสอบจากผู้ขาย', 'success');
-            fetchOrders(); // Refresh
-        } catch (error) {
-            console.error('Upload slip error', error);
-            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถอัปโหลดสลิปได้', 'error');
-        }
-    };
 
     const handleCancelOrder = async (orderId) => {
         Swal.fire({
@@ -119,7 +94,7 @@ const MyOrders = () => {
             });
             Swal.fire('สำเร็จ!', 'ขอบคุณสำหรับรีวิวของคุณครับ', 'success');
             setReviewModalOpen(false);
-            fetchOrders(); // refresh so maybe we can hide the button if already reviewed? We don't have reviewed flag yet, but user will get DUP_ENTRY error if try again.
+            fetchOrders();
         } catch (error) {
             Swal.fire('ข้อผิดพลาด', error.response?.data?.message || 'ไม่สามารถส่งรีวิวได้', 'error');
         }
@@ -145,16 +120,71 @@ const MyOrders = () => {
         }
     };
 
+    const filteredOrders = orders.filter(order => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'pending') return order.order_status === 'pending';
+        if (activeTab === 'shipping') return order.order_status === 'shipping';
+        if (activeTab === 'completed') return order.order_status === 'completed';
+        if (activeTab === 'cancelled') return ['cancelled', 'failed'].includes(order.order_status) || order.payment_status === 'failed';
+        return true;
+    });
+
+    const counts = {
+        all: orders.length,
+        pending: orders.filter(o => o.order_status === 'pending').length,
+        shipping: orders.filter(o => o.order_status === 'shipping').length,
+        completed: orders.filter(o => o.order_status === 'completed').length,
+        cancelled: orders.filter(o => ['cancelled', 'failed'].includes(o.order_status) || o.payment_status === 'failed').length,
+    };
+
+    const tabs = [
+        { id: 'all', label: 'ทั้งหมด', count: counts.all },
+        { id: 'pending', label: 'รอตรวจสอบ', count: counts.pending },
+        { id: 'shipping', label: 'กำลังจัดส่ง', count: counts.shipping },
+        { id: 'completed', label: 'สำเร็จ', count: counts.completed },
+        { id: 'cancelled', label: 'ยกเลิก', count: counts.cancelled },
+    ];
+
     return (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in fade-in">
-            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in fade-in">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center"><FiShoppingBag className="mr-2 text-primary" /> ประวัติการซื้อของฉัน</h2>
+                
+                {/* Tabs */}
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center space-x-2 ${
+                                activeTab === tab.id 
+                                ? 'bg-primary text-white shadow-md' 
+                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            <span>{tab.label}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                {tab.count}
+                            </span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[300px]">
                 {loading ? (
-                    <div className="flex justify-center items-center h-40">
+                    <div className="flex justify-center items-center h-64">
                         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                ) : filteredOrders.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center p-6">
+                        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <FiShoppingBag className="text-gray-300" size={48} />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800 mb-1">ไม่พบคำสั่งซื้อ</h3>
+                        <p className="text-gray-500 text-sm max-w-sm">คุณยังไม่มีประวัติการสั่งซื้อในหมวดหมู่นี้ เริ่มต้นค้นหาสัตว์เลี้ยงที่คุณถูกใจในตลาดเปิดท้ายเลย!</p>
                     </div>
                 ) : (
                     <table className="w-full text-left border-collapse min-w-[700px]">
@@ -168,68 +198,64 @@ const MyOrders = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {orders.length === 0 ? (
-                                <tr><td colSpan="5" className="p-12 text-center text-gray-400 font-medium">คุณยังไม่มีประวัติการสั่งซื้อ เริ่มต้นค้นหาสัตว์เลี้ยงที่คุณถูกใจเลย!</td></tr>
-                            ) : (
-                                orders.map(order => (
-                                    <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
-                                        <td className="p-4">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="h-16 w-16 bg-gray-100 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-white">
-                                                    <img src={order.product_image ? getFullImageUrl(order.product_image) : 'https://via.placeholder.com/100'} alt={order.product_name} className="w-full h-full object-cover" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-800 text-base">{order.product_name}</p>
-                                                    <p className="text-xs text-primary font-medium mt-0.5">รหัสสั่งซื้อ: #{String(order.id).slice(0,8)}</p>
-                                                </div>
+                            {filteredOrders.map(order => (
+                                <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
+                                    <td className="p-4">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="h-16 w-16 bg-gray-100 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-white">
+                                                <img src={order.product_image ? getFullImageUrl(order.product_image) : 'https://via.placeholder.com/100'} alt={order.product_name} className="w-full h-full object-cover" />
                                             </div>
-                                        </td>
-                                        <td className="p-4 font-black text-secondary text-lg">{formatPrice(order.total_price)}</td>
-                                        <td className="p-4 text-sm text-gray-500">{formatDate(order.created_at)}</td>
-                                        <td className="p-4">
-                                            {renderStatusBadge(order.payment_status === 'failed' ? 'failed' : order.order_status)}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(order.order_status === 'pending') && (!order.payment_status || order.payment_status === 'pending') ? (
-                                                <div className="flex flex-col space-y-2 items-center">
-                                                    <Link 
-                                                        to={`/payment/${order.transaction_id}`}
-                                                        className="inline-flex items-center justify-center px-4 py-2 bg-primary/10 text-primary font-bold text-xs rounded-full cursor-pointer hover:bg-primary hover:text-white transition-all transform hover:scale-105 shadow-sm w-32"
+                                            <div>
+                                                <p className="font-bold text-gray-800 text-base">{order.product_name}</p>
+                                                <p className="text-xs text-primary font-medium mt-0.5">รหัสสั่งซื้อ: #{String(order.id).slice(0,8)}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 font-black text-secondary text-lg">{formatPrice(order.total_price)}</td>
+                                    <td className="p-4 text-sm text-gray-500">{formatDate(order.created_at)}</td>
+                                    <td className="p-4">
+                                        {renderStatusBadge(order.payment_status === 'failed' ? 'failed' : order.order_status)}
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {(order.order_status === 'pending') && (!order.payment_status || order.payment_status === 'pending') ? (
+                                            <div className="flex flex-col space-y-2 items-center">
+                                                <Link 
+                                                    to={`/payment/${order.transaction_id}`}
+                                                    className="inline-flex items-center justify-center px-4 py-2 bg-primary/10 text-primary font-bold text-xs rounded-full cursor-pointer hover:bg-primary hover:text-white transition-all transform hover:scale-105 shadow-sm w-32"
+                                                >
+                                                    <FiUpload className="mr-1.5" /> ชำระเงิน/อัปสลิป
+                                                </Link>
+                                                {(!order.slip_image || order.slip_image === '') && (
+                                                    <button 
+                                                        onClick={() => handleCancelOrder(order.id)}
+                                                        className="inline-flex items-center justify-center px-4 py-2 bg-red-50 text-red-500 font-bold text-xs rounded-full cursor-pointer hover:bg-red-500 hover:text-white transition-all transform hover:scale-105 shadow-sm w-32"
                                                     >
-                                                        <FiUpload className="mr-1.5" /> ชำระเงิน/อัปสลิป
-                                                    </Link>
-                                                    {(!order.slip_image || order.slip_image === '') && (
-                                                        <button 
-                                                            onClick={() => handleCancelOrder(order.id)}
-                                                            className="inline-flex items-center justify-center px-4 py-2 bg-red-50 text-red-500 font-bold text-xs rounded-full cursor-pointer hover:bg-red-500 hover:text-white transition-all transform hover:scale-105 shadow-sm w-32"
-                                                        >
-                                                            <FiXCircle className="mr-1.5" /> ยกเลิกรายการ
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ) : (order.order_status === 'shipping') ? (
-                                                <button 
-                                                    onClick={() => handleConfirmReceipt(order.id)}
-                                                    className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white font-bold text-xs rounded-full cursor-pointer hover:bg-green-600 transition-all transform hover:scale-105 shadow-sm w-full font-sans tracking-wide"
-                                                >
-                                                    <FiCheckCircle className="mr-1.5" /> ได้รับสัตว์เลี้ยงแล้ว
-                                                </button>
-                                            ) : (order.order_status === 'cancelled') ? (
-                                                <span className="text-red-400 text-xs font-bold bg-red-50 px-3 py-1.5 rounded-full border border-red-100">ถูกยกเลิกแล้ว</span>
-                                            ) : (order.order_status === 'completed') ? (
-                                                <button 
-                                                    onClick={() => openReviewModal(order)}
-                                                    className="inline-flex items-center justify-center px-4 py-2 bg-yellow-100 text-yellow-700 font-bold text-xs rounded-full cursor-pointer hover:bg-yellow-400 hover:text-white transition-all transform hover:scale-105 shadow-sm w-full font-sans tracking-wide"
-                                                >
-                                                    <FiStar className="mr-1.5" /> รีวิวผู้ขาย
-                                                </button>
-                                            ) : (
-                                                <span className="text-gray-400 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">ผูกมัด / ดำเนินการไปแล้ว</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                                                        <FiXCircle className="mr-1.5" /> ยกเลิกรายการ
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (order.order_status === 'shipping') ? (
+                                            <button 
+                                                onClick={() => handleConfirmReceipt(order.id)}
+                                                className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white font-bold text-xs rounded-full cursor-pointer hover:bg-green-600 transition-all transform hover:scale-105 shadow-sm w-full font-sans tracking-wide"
+                                            >
+                                                <FiCheckCircle className="mr-1.5" /> ได้รับสัตว์เลี้ยงแล้ว
+                                            </button>
+                                        ) : (order.order_status === 'cancelled') ? (
+                                            <span className="text-red-400 text-xs font-bold bg-red-50 px-3 py-1.5 rounded-full border border-red-100">ถูกยกเลิกแล้ว</span>
+                                        ) : (order.order_status === 'completed') ? (
+                                            <button 
+                                                onClick={() => openReviewModal(order)}
+                                                className="inline-flex items-center justify-center px-4 py-2 bg-yellow-100 text-yellow-700 font-bold text-xs rounded-full cursor-pointer hover:bg-yellow-400 hover:text-white transition-all transform hover:scale-105 shadow-sm w-full font-sans tracking-wide"
+                                            >
+                                                <FiStar className="mr-1.5" /> รีวิวผู้ขาย
+                                            </button>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">ผูกมัด / ดำเนินการไปแล้ว</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 )}

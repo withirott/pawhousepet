@@ -14,7 +14,7 @@ import { FiHome, FiBox, FiUser, FiShoppingBag, FiMessageSquare, FiHeart, FiDolla
 
 const Dashboard = () => {
     const { user } = useAuthStore();
-    const [activeView, setActiveView] = useState('overview'); // overview, my_products, add_product, profile, orders, chats
+    const [activeView, setActiveView] = useState('overview');
 
     const renderContent = () => {
         switch (activeView) {
@@ -44,18 +44,43 @@ const Dashboard = () => {
         }
     };
 
-    const navItems = [
-        { id: 'overview', label: 'ภาพรวมบัญชี', icon: <FiHome /> },
-        { id: 'chats', label: 'กล่องข้อความ', icon: <FiMessageSquare /> },
-        { id: 'favorites', label: 'สัตว์เลี้ยงที่ถูกใจ', icon: <FiHeart /> },
-        { id: 'orders', label: 'ประวัติการซื้อของฉัน', icon: <FiShoppingBag /> },
-        { id: 'my_products', label: 'จัดการประกาศขาย', icon: <FiBox /> },
-        { id: 'sales', label: 'ออเดอร์ที่ลูกค้าสั่ง', icon: <FiDollarSign /> },
-        { id: 'profile', label: 'ตั้งค่าโปรไฟล์', icon: <FiUser /> },
+    const navGroups = [
+        {
+            title: '📋 ภาพรวม',
+            items: [
+                { id: 'overview', label: 'ภาพรวมบัญชี', icon: <FiHome /> },
+            ]
+        },
+        {
+            title: '🛒 ฝั่งผู้ซื้อ',
+            items: [
+                { id: 'chats', label: 'กล่องข้อความ', icon: <FiMessageSquare /> },
+                { id: 'favorites', label: 'สัตว์เลี้ยงที่ถูกใจ', icon: <FiHeart /> },
+                { id: 'orders', label: 'ประวัติการซื้อ', icon: <FiShoppingBag /> },
+            ]
+        },
+        {
+            title: '📦 ฝั่งผู้ขาย',
+            items: [
+                { id: 'my_products', label: 'จัดการประกาศขาย', icon: <FiBox /> },
+                { id: 'sales', label: 'ออเดอร์ที่ลูกค้าสั่ง', icon: <FiDollarSign /> },
+            ]
+        },
+        {
+            title: '⚙️ ตั้งค่า',
+            items: [
+                { id: 'profile', label: 'ตั้งค่าโปรไฟล์', icon: <FiUser /> },
+            ]
+        }
     ];
 
     if (user?.role === 'admin') {
-        navItems.push({ id: 'admin', label: 'ผู้ดูแลระบบ', icon: <FiShield /> });
+        navGroups.push({
+            title: '🛡️ ผู้ดูแล',
+            items: [
+                { id: 'admin', label: 'ผู้ดูแลระบบ', icon: <FiShield /> },
+            ]
+        });
     }
 
     return (
@@ -63,7 +88,7 @@ const Dashboard = () => {
             
             {/* Sidebar */}
             <aside className="w-full md:w-64 flex-shrink-0">
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden md:sticky md:top-24 flex flex-col md:h-[calc(100vh-140px)]">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden md:sticky md:top-24 flex flex-col md:h-[calc(100vh-140px)]">
                     <div className="p-6 bg-gradient-to-br from-secondary-light to-secondary flex flex-col items-center flex-shrink-0 hidden md:flex">
                         <div className="h-20 w-20 rounded-full bg-white flex justify-center items-center text-primary overflow-hidden text-3xl font-bold shadow-md mb-4 border-2 border-white">
                             {user?.profile_image ? (
@@ -85,16 +110,25 @@ const Dashboard = () => {
                         <span className="text-xs bg-white text-primary px-3 py-1 rounded-full font-bold tracking-wider">{user?.role === 'admin' ? 'ผู้ดูแลระบบ' : 'สมาชิกทั่วไป'}</span>
                     </div>
 
-                    <nav className="p-4 flex flex-row md:flex-col space-x-2 md:space-x-0 md:space-y-1 overflow-x-auto md:overflow-y-auto show-scrollbar pb-2 md:pb-4 scroll-smooth hide-scrollbar-mobile">
-                        {navItems.map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveView(item.id)}
-                                className={`flex-shrink-0 md:w-full flex items-center space-x-2 md:space-x-3 px-4 py-2.5 md:py-3 rounded-full md:rounded-lg font-medium transition-all whitespace-nowrap ${activeView === item.id ? 'bg-primary text-white md:bg-primary/10 md:text-primary md:border-l-4 md:border-primary shadow-md md:shadow-none' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 md:bg-transparent md:hover:bg-gray-50 hover:text-gray-900 border border-gray-100 md:border-0 md:border-l-4 md:border-transparent'}`}
-                            >
-                                <span className={activeView === item.id ? 'text-white md:text-primary' : 'text-gray-400'}>{item.icon}</span>
-                                <span>{item.label}</span>
-                            </button>
+                    <nav className="p-4 flex flex-row md:flex-col space-x-2 md:space-x-0 md:space-y-4 overflow-x-auto md:overflow-y-auto show-scrollbar pb-2 md:pb-4 scroll-smooth hide-scrollbar-mobile">
+                        {navGroups.map((group, index) => (
+                            <div key={index} className="flex flex-row md:flex-col space-x-2 md:space-x-0">
+                                <h3 className="hidden md:block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-2">
+                                    {group.title}
+                                </h3>
+                                <div className="flex flex-row md:flex-col space-x-2 md:space-x-0 md:space-y-1">
+                                    {group.items.map(item => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => setActiveView(item.id)}
+                                            className={`flex-shrink-0 md:w-full flex items-center space-x-2 md:space-x-3 px-4 py-2.5 md:py-3 rounded-full md:rounded-lg font-medium transition-all whitespace-nowrap ${activeView === item.id ? 'bg-primary text-white md:bg-primary/10 md:text-primary md:border-l-4 md:border-primary shadow-md md:shadow-none' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 md:bg-transparent md:hover:bg-gray-50 hover:text-gray-900 border border-gray-100 md:border-0 md:border-l-4 md:border-transparent'}`}
+                                        >
+                                            <span className={activeView === item.id ? 'text-white md:text-primary' : 'text-gray-400'}>{item.icon}</span>
+                                            <span>{item.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </nav>
                 </div>

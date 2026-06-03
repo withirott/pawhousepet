@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { FiCamera, FiSave, FiUser } from 'react-icons/fi';
 
 const ProfileEdit = () => {
-    const { user, checkAuth } = useAuthStore();
+    const { checkAuth } = useAuthStore();
     const [formData, setFormData] = useState({ email: '', phone: '', bio: '', address: '' });
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
     const [imageFile, setImageFile] = useState(null);

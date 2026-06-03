@@ -67,11 +67,11 @@ const AdminPanel = () => {
     const getFullImageUrl = (path) => `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`;
     const formatPrice = (price) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(Number(price) || 0);
 
-    if (loading) return <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div></div>;
+    if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 animate-fade-in fade-in">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 animate-fade-in fade-in">
+            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                 <FiShield className="mr-2 text-primary" /> จัดการระบบหลังบ้าน (Admin)
             </h2>
 
@@ -112,7 +112,7 @@ const AdminPanel = () => {
                     {kycRequests.length === 0 ? (
                         <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                             <FiCheckCircle size={48} className="mx-auto mb-4 text-green-300" />
-                            <p className="text-lg">ไม่มีคำขอยืนยันตัวตนค้างอยู่</p>
+                            <p className="text-lg font-bold">ไม่มีคำขอยืนยันตัวตนค้างอยู่</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -125,14 +125,14 @@ const AdminPanel = () => {
                                         </div>
                                     </div>
                                     <div className="p-4 flex flex-col items-center">
-                                        <div className="h-48 w-full bg-gray-100 rounded-xl mb-4 overflow-hidden flex items-center justify-center relative cursor-pointer" onClick={() => Swal.fire({imageUrl: getFullImageUrl(req.id_card_image), title: 'รูปบัตรประชาชน', width: 800})}>
+                                        <div className="h-48 w-full bg-gray-100 rounded-xl mb-4 overflow-hidden flex items-center justify-center relative cursor-pointer group" onClick={() => Swal.fire({imageUrl: getFullImageUrl(req.id_card_image), title: 'รูปบัตรประชาชน', width: 800})}>
                                             {req.id_card_image ? (
                                                 <img src={getFullImageUrl(req.id_card_image)} alt="ID Card" className="w-full h-full object-contain" />
                                             ) : (
-                                                <span className="text-gray-400">ไม่มีรูปภาพ</span>
+                                                <span className="text-gray-400 text-sm font-bold">ไม่มีรูปภาพ</span>
                                             )}
-                                            <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all flex items-center justify-center">
-                                                <span className="bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-xs opacity-0 hover:opacity-100">คลิกขยายรูป</span>
+                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center">
+                                                <span className="bg-black bg-opacity-60 text-white px-3 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">คลิกขยายรูป</span>
                                             </div>
                                         </div>
                                         <div className="flex space-x-3 w-full">

@@ -139,11 +139,16 @@ const Checkout = () => {
                             
                             {sellerQrImage ? (
                                 <div className="bg-white p-4 inline-block rounded-3xl border-4 border-primary/20 shadow-sm mb-4 bg-gradient-to-br from-white to-gray-50">
-                                    <img src={sellerQrImage} alt="Seller QR Code" className="w-48 h-48 object-contain rounded-lg" />
+                                    <img 
+                                        src={sellerQrImage} 
+                                        alt="QR Code" 
+                                        className="w-48 h-48 object-contain rounded-lg" 
+                                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="w-48 h-48 flex items-center justify-center text-gray-400 text-sm font-bold">ไม่สามารถโหลด QR ได้<br/>กรุณาแชทถามผู้ขาย</div>'; }}
+                                    />
                                 </div>
                             ) : (
                                 <div className="bg-yellow-50 text-yellow-700 p-3 rounded-xl mb-4 text-sm font-bold border border-yellow-100 flex items-center justify-center">
-                                    ไม่มีรูป QR Code สำหรับสแกน กรุณาโอนตามรายละเอียดด้านล่าง
+                                    ผู้ขายยังไม่ได้อัปโหลด QR Code กรุณาโอนตามรายละเอียดด้านล่าง
                                 </div>
                             )}
 

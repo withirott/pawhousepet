@@ -27,7 +27,6 @@ const AddProduct = ({ onSuccess }) => {
     vaccine_status: false,
     description: '',
     gender: 'Unknown',
-    gender: 'Unknown',
     location: '',
     lat: 13.7563, // Default Bangkok
     lng: 100.5018
@@ -80,7 +79,7 @@ const AddProduct = ({ onSuccess }) => {
             lng: position.coords.longitude
           }));
         },
-        (error) => {
+        () => {
           Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดึงตำแหน่งปัจจุบันได้ กรุณาเปิดการอนุญาต (Location) ในเบราว์เซอร์', 'error');
         }
       );

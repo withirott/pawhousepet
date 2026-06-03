@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/axios';
 import { FiDollarSign, FiClock, FiCheckCircle, FiXCircle, FiUser, FiPhone } from 'react-icons/fi';
 import Swal from 'sweetalert2';
+
 const MySales = () => {
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('all');
 
     const fetchSales = async () => {
         try {
@@ -72,16 +74,75 @@ const MySales = () => {
         }
     };
 
+    const isPending = (sale) => sale.order_status === 'pending' || sale.payment_status === 'pending';
+    const isCancelled = (sale) => ['cancelled', 'failed'].includes(sale.order_status) || sale.payment_status === 'rejected';
+    const isCompleted = (sale) => ['completed', 'approved'].includes(sale.order_status);
+
+    const filteredSales = sales.filter(sale => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'pending') return isPending(sale);
+        if (activeTab === 'shipping') return sale.order_status === 'shipping';
+        if (activeTab === 'completed') return isCompleted(sale);
+        if (activeTab === 'cancelled') return isCancelled(sale);
+        return true;
+    });
+
+    const counts = {
+        all: sales.length,
+        pending: sales.filter(s => isPending(s)).length,
+        shipping: sales.filter(s => s.order_status === 'shipping').length,
+        completed: sales.filter(s => isCompleted(s)).length,
+        cancelled: sales.filter(s => isCancelled(s)).length,
+    };
+
+    const tabs = [
+        { id: 'all', label: 'ทั้งหมด', count: counts.all },
+        { id: 'pending', label: 'รอสลิป', count: counts.pending },
+        { id: 'shipping', label: 'รอจัดส่ง', count: counts.shipping },
+        { id: 'completed', label: 'สำเร็จ', count: counts.completed },
+        { id: 'cancelled', label: 'ยกเลิก', count: counts.cancelled },
+    ];
+
     return (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in fade-in">
-            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in fade-in">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center"><FiDollarSign className="mr-2 text-primary" /> ออเดอร์ที่ลูกค้าสั่ง</h2>
+                
+                {/* Tabs */}
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center space-x-2 ${
+                                activeTab === tab.id 
+                                ? 'bg-primary text-white shadow-md' 
+                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            <span>{tab.label}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                {tab.count}
+                            </span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[300px]">
                 {loading ? (
-                    <div className="flex justify-center items-center h-40">
+                    <div className="flex justify-center items-center h-64">
                         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                ) : filteredSales.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center p-6">
+                        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <FiDollarSign className="text-gray-300" size={48} />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800 mb-1">ไม่มีออเดอร์ในหมวดหมู่นี้</h3>
+                        <p className="text-gray-500 text-sm max-w-sm">คุณยังไม่มีรายการขายที่ตรงกับสถานะที่คุณเลือก</p>
                     </div>
                 ) : (
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -95,49 +156,45 @@ const MySales = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {sales.length === 0 ? (
-                                <tr><td colSpan="5" className="p-12 text-center text-gray-400 font-medium">คุณยังไม่มีรายการขายในขณะนี้</td></tr>
-                            ) : (
-                                sales.map(sale => (
-                                    <tr key={sale.id} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
-                                        <td className="p-4">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="h-16 w-16 bg-gray-100 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-white">
-                                                    <img src={sale.product_image ? getFullImageUrl(sale.product_image) : 'https://via.placeholder.com/100'} alt={sale.product_name} className="w-full h-full object-cover" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-800 text-base">{sale.product_name}</p>
-                                                    <p className="text-xs text-primary font-medium mt-0.5">Sale ID: #{String(sale.id).slice(0,8)}</p>
-                                                </div>
+                            {filteredSales.map(sale => (
+                                <tr key={sale.id} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
+                                    <td className="p-4">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="h-16 w-16 bg-gray-100 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-white">
+                                                <img src={sale.product_image ? getFullImageUrl(sale.product_image) : 'https://via.placeholder.com/100'} alt={sale.product_name} className="w-full h-full object-cover" />
                                             </div>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex flex-col space-y-1">
-                                                <p className="text-sm font-bold text-gray-800 flex items-center"><FiUser className="mr-1.5 text-secondary" /> {sale.buyer_name}</p>
-                                                <p className="text-xs text-gray-500 flex items-center"><FiPhone className="mr-1.5 text-gray-400" /> {sale.buyer_phone || 'ไม่ได้ระบุเบอร์'}</p>
+                                            <div>
+                                                <p className="font-bold text-gray-800 text-base">{sale.product_name}</p>
+                                                <p className="text-xs text-primary font-medium mt-0.5">Sale ID: #{String(sale.id).slice(0,8)}</p>
                                             </div>
-                                        </td>
-                                        <td className="p-4 font-black text-secondary text-lg">{formatPrice(sale.total_price)}</td>
-                                        <td className="p-4 text-sm text-gray-500">{formatDate(sale.created_at)}</td>
-                                        <td className="p-4 text-center">
-                                            {renderStatusBadge(sale.payment_status === 'rejected' ? 'rejected' : sale.order_status)}
-                                            {sale.order_status === 'shipping' && !sale.delivery_proof && (
-                                                <button 
-                                                    onClick={() => handleUploadProof(sale.id)}
-                                                    className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-full transition-colors"
-                                                >
-                                                    อัปโหลดหลักฐานการส่ง
-                                                </button>
-                                            )}
-                                            {sale.delivery_proof && (
-                                                <div className="mt-2 text-xs text-green-600 font-bold flex items-center justify-center">
-                                                    <FiCheckCircle className="mr-1" /> ส่งหลักฐานแล้ว
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-bold text-gray-800 flex items-center"><FiUser className="mr-1.5 text-secondary" /> {sale.buyer_name}</p>
+                                            <p className="text-xs text-gray-500 flex items-center"><FiPhone className="mr-1.5 text-gray-400" /> {sale.buyer_phone || 'ไม่ได้ระบุเบอร์'}</p>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 font-black text-secondary text-lg">{formatPrice(sale.total_price)}</td>
+                                    <td className="p-4 text-sm text-gray-500">{formatDate(sale.created_at)}</td>
+                                    <td className="p-4 text-center">
+                                        {renderStatusBadge(sale.payment_status === 'rejected' ? 'rejected' : sale.order_status)}
+                                        {sale.order_status === 'shipping' && !sale.delivery_proof && (
+                                            <button 
+                                                onClick={() => handleUploadProof(sale.id)}
+                                                className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-full transition-colors"
+                                            >
+                                                อัปโหลดหลักฐานการส่ง
+                                            </button>
+                                        )}
+                                        {sale.delivery_proof && (
+                                            <div className="mt-2 text-xs text-green-600 font-bold flex items-center justify-center">
+                                                <FiCheckCircle className="mr-1" /> ส่งหลักฐานแล้ว
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 )}

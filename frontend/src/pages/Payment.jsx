@@ -105,7 +105,12 @@ const Payment = () => {
                                     </div>
                                     {sellerQr ? (
                                         <div className="flex-shrink-0 flex items-center justify-center bg-white p-2 rounded-xl border border-gray-200 shadow-sm h-36 w-36 self-center">
-                                            <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${sellerQr}`} alt="Seller QR Code" className="w-full h-full object-contain rounded-lg" />
+                                            <img 
+                                                src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${sellerQr}`} 
+                                                alt="QR Code" 
+                                                className="w-full h-full object-contain rounded-lg"
+                                                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold text-center p-2">ไม่สามารถโหลด QR ได้</div>'; }}
+                                            />
                                         </div>
                                     ) : (
                                         <div className="flex-shrink-0 flex items-center justify-center bg-gray-100 text-gray-400 p-2 rounded-xl border border-gray-200 border-dashed h-36 w-36 self-center text-xs text-center font-medium px-4">

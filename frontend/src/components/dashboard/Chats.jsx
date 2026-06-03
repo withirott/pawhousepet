@@ -13,6 +13,24 @@ const Chats = () => {
     const [socket, setSocket] = useState(null);
     const messagesEndRef = useRef(null);
 
+    const fetchChats = async () => {
+        try {
+            const res = await api.get('/chats');
+            setChats(res.data);
+        } catch (error) {
+            console.error('Failed to load chats', error);
+        }
+    };
+
+    const fetchMessages = async (chatId) => {
+        try {
+            const res = await api.get(`/chats/${chatId}/messages`);
+            setMessages(res.data);
+        } catch (error) {
+            console.error('Failed to load messages', error);
+        }
+    };
+
     useEffect(() => {
         // Connect to Socket
         const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
@@ -58,23 +76,7 @@ const Chats = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const fetchChats = async () => {
-        try {
-            const res = await api.get('/chats');
-            setChats(res.data);
-        } catch (error) {
-            console.error('Failed to load chats', error);
-        }
-    };
 
-    const fetchMessages = async (chatId) => {
-        try {
-            const res = await api.get(`/chats/${chatId}/messages`);
-            setMessages(res.data);
-        } catch (error) {
-            console.error('Failed to load messages', error);
-        }
-    };
 
     const sendMessage = async (e) => {
         e.preventDefault();

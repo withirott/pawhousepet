@@ -20,7 +20,7 @@ const Favorites = () => {
             // keep favorites in sync with the global favoriteIds incase it was removed
             setFavorites(prev => prev.filter(p => favoriteIds.includes(p.id)));
         }
-    }, [favoriteIds]);
+    }, [favoriteIds, loading]);
 
     const fetchFavorites = async () => {
         try {
@@ -36,28 +36,29 @@ const Favorites = () => {
 
     if (loading) {
         return (
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 min-h-full flex justify-center items-center">
-                <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-full flex justify-center items-center">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 min-h-full overflow-hidden flex flex-col animate-fade-in fade-in">
-            <div className="p-8 border-b border-gray-100 bg-gray-50/50">
-                <h2 className="text-3xl font-black text-secondary tracking-tight">รายการโปรด</h2>
-                <p className="text-gray-500 mt-2 text-lg">รายการสัตว์เลี้ยงทั้งหมดที่คุณสนใจและบันทึกเอาไว้</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-full overflow-hidden flex flex-col animate-fade-in fade-in">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                    <FiHeart className="mr-2 text-primary" /> สัตว์เลี้ยงที่ถูกใจ
+                </h2>
             </div>
 
-            <div className="p-8 flex-grow">
+            <div className="p-6 flex-grow">
                 {favorites.length === 0 ? (
-                    <div className="border-2 border-dashed border-gray-200 rounded-3xl p-16 flex flex-col items-center justify-center text-center">
+                    <div className="border-2 border-dashed border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center">
                         <div className="w-24 h-24 bg-red-50 text-red-400 rounded-full flex items-center justify-center mb-6 shadow-sm">
                             <FiHeart size={40} className="fill-current" />
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">ยังไม่มีรายการโปรด</h3>
-                        <p className="text-gray-500 mb-8 max-w-sm">คุณสามารถค้นหาสัตว์เลี้ยงที่สนใจ และกดหัวใจเพื่อบันทึกเก็บไว้ดูภายหลังได้</p>
-                        <Link to="/marketplace" className="bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-full transition-transform hover:-translate-y-1 shadow-md">
+                        <h3 className="text-lg font-bold text-gray-800 mb-2">ยังไม่มีรายการโปรด</h3>
+                        <p className="text-gray-500 mb-8 max-w-sm text-sm">คุณสามารถค้นหาสัตว์เลี้ยงที่สนใจ และกดหัวใจเพื่อบันทึกเก็บไว้ดูภายหลังได้</p>
+                        <Link to="/marketplace" className="bg-primary hover:bg-primary-dark text-white font-bold px-6 py-3 rounded-full transition-transform hover:-translate-y-1 shadow-md text-sm">
                             ไปที่ตลาดซื้อขาย
                         </Link>
                     </div>
